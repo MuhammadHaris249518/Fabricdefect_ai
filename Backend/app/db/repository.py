@@ -1,7 +1,4 @@
-<<<<<<< Updated upstream
-=======
-# Repo path: Backend/app/db/repository.py  (UPDATED — add annotation functions)
-import uuid
+﻿import uuid
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -61,4 +58,3 @@ def upsert_annotation(
 
 def get_annotation_by_image_id(db: Session, image_id: str) -> Optional[Annotation]:
     return db.query(Annotation).filter(Annotation.image_id == image_id).first()
->>>>>>> Stashed changes

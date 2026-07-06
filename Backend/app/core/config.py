@@ -1,7 +1,4 @@
-<<<<<<< Updated upstream
-=======
-# Repo path: Backend/app/core/config.py  (UPDATED — add Roboflow section)
-from functools import lru_cache
+﻿from functools import lru_cache
 from typing import List
 
 from pydantic_settings import BaseSettings
@@ -37,4 +34,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
->>>>>>> Stashed changes
