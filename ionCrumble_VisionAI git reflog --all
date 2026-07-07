@@ -1,0 +1,48 @@
+[33m16cad25[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/remotes/origin/main@{0}: update by push
+[33m16cad25[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/heads/main@{0}: commit: new code after distruction
+[33m16cad25[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: commit: new code after distruction
+[33m1d43066[m refs/remotes/origin/HEAD@{0}: remote set-head
+[33m1d43066[m HEAD@{1}: checkout: moving from feature/khizar to main
+[33m1d43066[m refs/remotes/origin/HEAD@{1}: remote set-head
+[33m1e1d091[m[33m ([m[1;32mfeature/khizar[m[33m)[m HEAD@{2}: checkout: moving from feature/khizar to feature/khizar
+[33m1e1d091[m[33m ([m[1;32mfeature/khizar[m[33m)[m refs/heads/feature/khizar@{0}: commit (merge): Merge branch 'main' of https://github.com/MuhammadHaris249518/Crumble_VisionAI into feature/khizar
+[33m1e1d091[m[33m ([m[1;32mfeature/khizar[m[33m)[m HEAD@{3}: commit (merge): Merge branch 'main' of https://github.com/MuhammadHaris249518/Crumble_VisionAI into feature/khizar
+[33m59dd442[m HEAD@{4}: checkout: moving from main to feature/khizar
+[33m1d43066[m HEAD@{5}: checkout: moving from feature/khizar to main
+[33m1d43066[m refs/heads/main@{1}: pull: fast-forward
+[33m1d43066[m refs/remotes/origin/HEAD@{2}: remote set-head
+[33m59dd442[m HEAD@{6}: checkout: moving from feature/login_logout to feature/khizar
+[33m71948cb[m[33m ([m[1;31morigin/feature/login_logout[m[33m, [m[1;32mfeature/login_logout[m[33m)[m refs/heads/feature/login_logout@{0}: branch: Created from origin/feature/login_logout
+[33m71948cb[m[33m ([m[1;31morigin/feature/login_logout[m[33m, [m[1;32mfeature/login_logout[m[33m)[m HEAD@{7}: checkout: moving from feature/khizar to feature/login_logout
+[33m59dd442[m HEAD@{8}: checkout: moving from main to feature/khizar
+[33m1d43066[m refs/remotes/origin/HEAD@{3}: remote set-head
+[33m1d43066[m refs/remotes/origin/main@{1}: fetch --progress --prune --recurse-submodules=on-demand origin: fast-forward
+[33m2fda307[m HEAD@{9}: checkout: moving from feature/khizar to main
+[33m59dd442[m refs/heads/feature/khizar@{1}: Branch: renamed refs/heads/feature/home_page to refs/heads/feature/khizar
+[33m59dd442[m HEAD@{10}: Branch: renamed refs/heads/feature/home_page to refs/heads/feature/khizar
+[33m59dd442[m refs/heads/feature/khizar@{2}: branch: Created from origin/feature/home_page
+[33m59dd442[m HEAD@{12}: checkout: moving from main to feature/home_page
+[33m2fda307[m HEAD@{13}: reset: moving to HEAD
+[33m7bb05f8[m[33m ([m[1;35mrefs/stash[m[33m)[m refs/stash@{0}: On main: !!GitHub_Desktop<main>
+[33m2fda307[m refs/remotes/origin/HEAD@{4}: remote set-head
+[33m2fda307[m refs/remotes/origin/main@{2}: update by push
+[33m2fda307[m refs/heads/main@{2}: commit: postgresql integration updates
+[33m2fda307[m HEAD@{14}: commit: postgresql integration updates
+[33ma0e0b88[m refs/remotes/origin/main@{3}: update by push
+[33ma0e0b88[m refs/heads/main@{3}: commit: kpi 1 and kpi 2
+[33ma0e0b88[m HEAD@{15}: commit: kpi 1 and kpi 2
+[33m0a09b04[m refs/remotes/origin/HEAD@{5}: remote set-head
+[33m0a09b04[m refs/remotes/origin/HEAD@{6}: remote set-head
+[33m0a09b04[m refs/remotes/origin/HEAD@{7}: remote set-head
+[33m0a09b04[m refs/remotes/origin/main@{4}: update by push
+[33m3570427[m refs/remotes/origin/HEAD@{8}: remote set-head
+[33m0a09b04[m refs/heads/main@{4}: pull --ff --recurse-submodules --progress origin: Merge made by the 'ort' strategy.
+[33m0a09b04[m HEAD@{16}: pull --ff --recurse-submodules --progress origin: Merge made by the 'ort' strategy.
+[33m3570427[m refs/remotes/origin/HEAD@{9}: remote set-head
+[33m3570427[m refs/remotes/origin/main@{5}: fetch --progress --prune --recurse-submodules=on-demand origin: fast-forward
+[33mbe986b5[m refs/heads/main@{5}: commit: kpi 2 implemented by haris
+[33mbe986b5[m HEAD@{17}: commit: kpi 2 implemented by haris
+[33md9727cc[m refs/remotes/origin/HEAD@{10}: remote set-head
+[33md9727cc[m refs/heads/main@{6}: clone: from https://github.com/MuhammadHaris249518/Crumble_VisionAI.git
+[33md9727cc[m refs/remotes/origin/HEAD@{11}: clone: from https://github.com/MuhammadHaris249518/Crumble_VisionAI.git
+[33md9727cc[m HEAD@{18}: clone: from https://github.com/MuhammadHaris249518/Crumble_VisionAI.git
