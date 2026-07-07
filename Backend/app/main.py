@@ -9,6 +9,7 @@ from app.api.v1 import annotations, generations, images
 from app.core.config import get_settings
 from app.db import models  # noqa: F401
 from app.db.base import Base
+from app.db.migrate import run_migrations
 from app.db.session import engine
 
 settings = get_settings()
@@ -17,6 +18,7 @@ for directory in [settings.UPLOAD_DIR, "storage/results", "storage/masks", "stor
     Path(directory).mkdir(parents=True, exist_ok=True)
 
 Base.metadata.create_all(bind=engine)
+run_migrations()
 
 app = FastAPI(title=settings.APP_NAME)
 

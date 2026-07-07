@@ -1,5 +1,5 @@
-﻿﻿# Repo path: Backend/app/db/repository.py
-from typing import Optional
+﻿from typing import Optional
+
 
 from sqlalchemy.orm import Session
 
