@@ -1,9 +1,9 @@
-﻿# Repo path: Backend/app/db/repository.py
+﻿﻿# Repo path: Backend/app/db/repository.py
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Image
+from app.db.models import Generation, Image
 
 
 def create_image_record(

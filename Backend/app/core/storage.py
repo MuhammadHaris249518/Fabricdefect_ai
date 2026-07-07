@@ -32,5 +32,23 @@ class LocalImageStorage:
         return str(self.base_dir / f"{image_id}{extension}")
 
 
+class LocalMaskStorage:
+    """Stores annotation-derived masks (PNG, white=edit region / black=untouched)."""
+
+    def __init__(self, base_dir: str | None = None):
+        self.base_dir = Path(base_dir or "storage/masks")
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+    def save(self, file_bytes: bytes, generation_id: str) -> str:
+        stored_path = self.base_dir / f"{generation_id}.png"
+        with open(stored_path, "wb") as f:
+            f.write(file_bytes)
+        return str(stored_path)
+
+
 def get_storage() -> LocalImageStorage:
     return LocalImageStorage()
+
+
+def get_mask_storage() -> LocalMaskStorage:
+    return LocalMaskStorage()
