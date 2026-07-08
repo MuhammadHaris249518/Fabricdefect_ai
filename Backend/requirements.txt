@@ -12,7 +12,10 @@ psycopg2-binary==2.9.9
 # Roboflow REST API (upload image + fetch annotation), not just by tests.
 httpx==0.27.2
 
-# MobileSAM (ai_experiments) requires timm for the TinyViT image encoder
-timm==1.0.27
+# MobileSAM dependencies
+torch==2.4.1
+torchvision==0.19.1
+numpy==1.26.4
+git+https://github.com/ChaoningZhang/MobileSAM.git@master#egg=mobile_sam
 
 pytest==8.3.3

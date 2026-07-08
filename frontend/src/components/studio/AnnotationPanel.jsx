@@ -27,29 +27,25 @@ function AnnotationWorkspace({ image, onMaskChange }) {
 
   const { shapes, commit, undo, redo, canUndo, canRedo, reset } = useAnnotationHistory([]);
 
-  // When the AI Select tool is used, call MobileSAM with the clicked point
-  // and feed the returned mask into the same contract the rest of the
-  // studio uses (dataUrl + previewUrl). This means Generate works unchanged.
-  const handleSamClick = useCallback(
-    async ({ x, y }) => {
-      if (!image?.id) return;
-      setSamLoading(true);
-      setSamError(null);
-      try {
-        const { mask_data } = await segmentWithSam({
-          imageId: image.id,
-          pointX: x,
-          pointY: y,
-        });
-        onMaskChange?.({ dataUrl: mask_data, previewUrl: mask_data });
-      } catch (err) {
-        setSamError(err.message || "AI segmentation failed.");
-      } finally {
-        setSamLoading(false);
-      }
-    },
-    [image, onMaskChange]
-  );
+   // When the AI Select tool is used, call MobileSAM with the box the user dragged
+   // and feed the returned mask into the same contract the rest of the
+   // studio uses (dataUrl + previewUrl). This means Generate works unchanged.
+   const handleSamBoxReady = useCallback(
+     async (box) => {
+       if (!image?.id) return;
+       setSamLoading(true);
+       setSamError(null);
+       try {
+         const { mask_data } = await segmentWithSam({ imageId: image.id, box });
+         onMaskChange?.({ dataUrl: mask_data, previewUrl: mask_data });
+       } catch (err) {
+         setSamError(err.message || "AI segmentation failed.");
+       } finally {
+         setSamLoading(false);
+       }
+     },
+     [image, onMaskChange]
+   );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -105,7 +101,7 @@ function AnnotationWorkspace({ image, onMaskChange }) {
           brushSize={brushSize}
           shapes={shapes}
           onCommitShape={handleCommitShape}
-          onSamClick={handleSamClick}
+          onSamBoxReady={handleSamBoxReady}
           containerSize={{ width: containerWidth, height: PANEL_HEIGHT }}
           onImageLoad={setNaturalSize}
         />

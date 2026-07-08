@@ -198,6 +198,8 @@ datasets/
 models/
 saved_models/
 checkpoints/
+# MobileSAM weights (downloaded at setup time)
+Backend/app/ml/sam/weights/
 
 # Documentation build
 docs/_build/

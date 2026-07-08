@@ -47,52 +47,19 @@ export async function generateImage({ imageId, prompt, maskDataUrl }) {
 }
 
 /**
- * Creates (or reuses) a Roboflow annotation session for an uploaded image.
- * Returns { roboflow_image_id, annotate_url }.
+ * Runs box-prompted MobileSAM for the user's rough rectangle selection.
+ * `box` is [x0, y0, x1, y1] in image pixel coordinates; `point` is an
+ * optional {x, y} disambiguation point inside the box.
+ * Returns { mask_data } — a data: URL PNG mask (white = editable region).
  */
-export async function createRoboflowSession(imageId) {
-  const res = await fetch(`${BASE}/annotations/session?image_id=${encodeURIComponent(imageId)}`, {
-    method: "POST",
-  });
-
-  const body = await res.json();
-  if (!res.ok) {
-    throw new Error(body.detail || "Could not start Roboflow annotation session.");
-  }
-
-  return body;
-}
-
-/**
- * Polls Roboflow (via the backend) for a finished annotation.
- * Returns { ready, mask_data, message } — mask_data is a data: URL when ready.
- */
-export async function fetchRoboflowMask(imageId) {
-  const res = await fetch(`${BASE}/annotations/mask/${encodeURIComponent(imageId)}`);
-
-  const body = await res.json();
-  if (!res.ok) {
-    throw new Error(body.detail || "Could not fetch the Roboflow mask.");
-  }
-
-  return body;
-}
-
-/**
- * Runs the MobileSAM AI experiment for a single clicked point on the image.
- * Returns { mask_data } where mask_data is a data: URL PNG mask
- * (white = editable region), matching the studio's mask contract.
- */
-export async function segmentWithSam({ imageId, pointX, pointY }) {
+export async function segmentWithSam({ imageId, box, point }) {
   const res = await fetch(`${BASE}/sam/segment`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       image_id: imageId,
-      point_x: pointX,
-      point_y: pointY,
+      box,
+      ...(point ? { point } : {}),
     }),
   });
 
@@ -100,6 +67,5 @@ export async function segmentWithSam({ imageId, pointX, pointY }) {
   if (!res.ok) {
     throw new Error(body.detail || "AI segmentation failed.");
   }
-
   return body;
 }

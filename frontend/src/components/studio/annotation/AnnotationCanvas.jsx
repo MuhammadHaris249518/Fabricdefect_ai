@@ -26,16 +26,16 @@ const CLOSE_VERTEX_THRESHOLD_PX = 12;
  * can control zoom without duplicating pan/scale state.
  */
 const AnnotationCanvas = forwardRef(function AnnotationCanvas(
-  { imageUrl, tool, brushSize, shapes, onCommitShape, containerSize, onImageLoad, onSamClick },
-  ref
+   { imageUrl, tool, brushSize, shapes, onCommitShape, containerSize, onImageLoad, onSamBoxReady },
+   ref
 ) {
-  const [imgEl, setImgEl] = useState(null);
-  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
-  const [scale, setScale] = useState(1);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const [draft, setDraft] = useState(null);
-  const stageRef = useRef(null);
-  const isDrawing = useRef(false);
+   const [imgEl, setImgEl] = useState(null);
+   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
+   const [scale, setScale] = useState(1);
+   const [pos, setPos] = useState({ x: 0, y: 0 });
+   const [draft, setDraft] = useState(null);
+   const stageRef = useRef(null);
+   const isDrawing = useRef(false);
 
   // Load the raw <img> element once per image URL.
   useEffect(() => {
@@ -155,16 +155,9 @@ const AnnotationCanvas = forwardRef(function AnnotationCanvas(
     if (!point) return;
 
     if (tool === "sam") {
-      // Hand the clicked image-pixel point up to the parent, which calls
-      // the MobileSAM backend and replaces the mask with the AI result.
-      onSamClick?.({
-        x: Math.round(point.x),
-        y: Math.round(point.y),
-      });
-      return;
-    }
-
-    if (tool === "brush" || tool === "eraser") {
+      isDrawing.current = true;
+      setDraft({ kind: "rect", erase: false, sam: true, x: point.x, y: point.y, width: 0, height: 0 });
+    } else if (tool === "brush" || tool === "eraser") {
       isDrawing.current = true;
       setDraft({
         kind: "stroke",
@@ -198,7 +191,7 @@ const AnnotationCanvas = forwardRef(function AnnotationCanvas(
 
     if ((tool === "brush" || tool === "eraser") && isDrawing.current) {
       setDraft((prev) => (prev ? { ...prev, points: [...prev.points, point.x, point.y] } : prev));
-    } else if (tool === "rectangle" && isDrawing.current) {
+    } else if ((tool === "rectangle" || tool === "sam") && isDrawing.current) {
       setDraft((prev) =>
         prev ? { ...prev, width: point.x - prev.x, height: point.y - prev.y } : prev
       );
@@ -209,6 +202,19 @@ const AnnotationCanvas = forwardRef(function AnnotationCanvas(
     if (tool === "pan" || tool === "polygon") return; // polygon commits on vertex click, not release
     if (!isDrawing.current) return;
     isDrawing.current = false;
+
+    if (tool === "sam" && draft?.kind === "rect") {
+      const x0 = Math.min(draft.x, draft.x + draft.width);
+      const y0 = Math.min(draft.y, draft.y + draft.height);
+      const x1 = Math.max(draft.x, draft.x + draft.width);
+      const y1 = Math.max(draft.y, draft.y + draft.height);
+      if (x1 - x0 >= 8 && y1 - y0 >= 8) {
+        onSamBoxReady?.([Math.round(x0), Math.round(y0), Math.round(x1), Math.round(y1)]);
+      }
+      setDraft(null);
+      return;
+    }
+
     commitDraft();
   };
 

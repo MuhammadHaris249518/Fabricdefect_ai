@@ -1,3 +1,5 @@
+
+# Repo path: Backend/app/services/generation_service.py
 """
 Masked generation service.
 
@@ -17,6 +19,9 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+_RESULT_DIR = _BACKEND_ROOT / "storage" / "results"
+
 
 def _load_mask(mask_path: str, target_size: tuple[int, int]) -> np.ndarray:
     """Load the mask from disk and resize to target_size (W, H). Returns a
@@ -24,7 +29,6 @@ def _load_mask(mask_path: str, target_size: tuple[int, int]) -> np.ndarray:
     mask_img = Image.open(mask_path).convert("L")
     mask_img = mask_img.resize(target_size, Image.Resampling.NEAREST)
     mask_arr = np.array(mask_img)
-    # White (>=128) = the region the user drew = the area to edit
     return mask_arr > 128
 
 
@@ -32,20 +36,15 @@ def _apply_burn_effect(source: Image.Image, mask: np.ndarray) -> Image.Image:
     """Darken/burn the masked region with a brownish-black gradient."""
     result = np.array(source).copy()
     h, w = mask.shape
-    # Create a burn overlay
-    burn = np.zeros((h, w, 3), dtype=np.uint8)
-    # Random dark brown spots within the mask
     rng = np.random.default_rng()
     for _ in range(max(1, h * w // 2000)):
         cx, cy = rng.integers(0, w), rng.integers(0, h)
         radius = rng.integers(5, 40)
         intensity = rng.integers(30, 120)
-        # Dark brown/black
         color = (intensity, intensity // 3, intensity // 6)
         for y in range(max(0, cy - radius), min(h, cy + radius)):
             for x in range(max(0, cx - radius), min(w, cx + radius)):
                 if (x - cx) ** 2 + (y - cy) ** 2 < radius**2 and mask[y, x]:
-                    # Blend toward the burn color
                     alpha = rng.uniform(0.3, 0.9)
                     result[y, x] = (result[y, x] * (1 - alpha) + np.array(color) * alpha).astype(np.uint8)
     return Image.fromarray(result)
@@ -56,24 +55,19 @@ def _apply_crack_effect(source: Image.Image, mask: np.ndarray) -> Image.Image:
     result = np.array(source).copy()
     h, w = mask.shape
     rng = np.random.default_rng()
-    # Draw several crack lines
     for _ in range(rng.integers(3, 8)):
-        # Start within the mask
         for attempt in range(50):
             sx, sy = rng.integers(0, w), rng.integers(0, h)
             if mask[sy, sx]:
                 break
         else:
             continue
-        # Walk a crack path
         x, y = sx, sy
         length = rng.integers(20, 80)
         for _ in range(length):
             if not (0 <= x < w and 0 <= y < h) or not mask[y, x]:
                 break
-            # Dark crack pixel
             result[y, x] = (20, 15, 10)
-            # Branch
             if rng.random() < 0.15:
                 dx = rng.integers(-2, 3)
                 dy = rng.integers(-2, 3)
@@ -99,7 +93,6 @@ def _apply_mold_effect(source: Image.Image, mask: np.ndarray) -> Image.Image:
             for x in range(max(0, cx - radius), min(w, cx + radius)):
                 if (x - cx) ** 2 + (y - cy) ** 2 < radius**2 and mask[y, x]:
                     alpha = rng.uniform(0.2, 0.7)
-                    # Greenish tint
                     orig = result[y, x].astype(float)
                     mold = np.array([30, 120, 50])
                     result[y, x] = (orig * (1 - alpha) + mold * alpha).astype(np.uint8)
@@ -119,7 +112,6 @@ def _apply_chocolate_chips_effect(source: Image.Image, mask: np.ndarray) -> Imag
         for y in range(max(0, cy - radius), min(h, cy + radius)):
             for x in range(max(0, cx - radius), min(w, cx + radius)):
                 if (x - cx) ** 2 + (y - cy) ** 2 < radius**2 and mask[y, x]:
-                    # Solid dark chocolate color
                     result[y, x] = (45, 25, 15)
     return Image.fromarray(result)
 
@@ -131,7 +123,6 @@ def _apply_underbaked_effect(source: Image.Image, mask: np.ndarray) -> Image.Ima
     for y in range(h):
         for x in range(w):
             if mask[y, x]:
-                # Wash out with a pale yellow-white tint
                 orig = result[y, x].astype(float)
                 pale = np.array([240, 230, 200])
                 result[y, x] = (orig * 0.4 + pale * 0.6).astype(np.uint8)
@@ -151,7 +142,6 @@ def _apply_broken_edge_effect(source: Image.Image, mask: np.ndarray) -> Image.Im
         for y in range(max(0, cy - radius), min(h, cy + radius)):
             for x in range(max(0, cx - radius), min(w, cx + radius)):
                 if (x - cx) ** 2 + (y - cy) ** 2 < radius**2 and mask[y, x]:
-                    # Jagged missing chunk (dark background color)
                     jitter = rng.integers(-3, 4)
                     if abs(x - cx) + abs(y - cy) + jitter > radius:
                         result[y, x] = (60, 40, 20)
@@ -163,7 +153,6 @@ def _apply_generic_effect(source: Image.Image, mask: np.ndarray) -> Image.Image:
     result = np.array(source).copy()
     h, w = mask.shape
     rng = np.random.default_rng()
-    # Subtle noise + color shift
     noise = rng.integers(-20, 20, (h, w, 3), dtype=np.int16)
     for y in range(h):
         for x in range(w):
@@ -205,23 +194,18 @@ def generate_defect(
     source = Image.open(source_path).convert("RGB")
     orig_size = source.size  # (width, height)
 
-    # 1. Load the mask and resize to source dimensions
     mask_arr = _load_mask(mask_path, orig_size)
 
     if not mask_arr.any():
-        # No mask region = return original untouched
         logger.warning("Mask is empty, returning original image")
         result = source
     else:
-        # 2. Apply the effect matching the prompt
         prompt_lower = prompt.strip().lower()
         effect_fn = _PROMPT_EFFECTS.get(prompt_lower, _apply_generic_effect)
         logger.info("Applying effect '%s' within mask region", prompt_lower)
         result = effect_fn(source, mask_arr)
 
-    # 3. Save the result
-    result_dir = Path("storage/results")
-    result_dir.mkdir(parents=True, exist_ok=True)
-    result_path = result_dir / f"result_{generation_id}.png"
+    _RESULT_DIR.mkdir(parents=True, exist_ok=True)
+    result_path = _RESULT_DIR / f"result_{generation_id}.png"
     result.save(result_path)
     return result_path

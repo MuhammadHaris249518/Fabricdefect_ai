@@ -135,8 +135,7 @@ export default function Toolbar({
 
       {tool === "sam" && (
         <p className="text-[11px] text-text-secondary">
-          Click once on the object you want to select — the AI (MobileSAM) will
-          generate the mask automatically.
+          Drag a rough box around the defect area. Release to let AI tighten it into a precise mask.
         </p>
       )}
     </div>

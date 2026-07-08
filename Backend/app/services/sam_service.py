@@ -1,112 +1,56 @@
-# Repo path: Backend/app/services/sam_service.py  (NEW FILE)
+# Repo path: Backend/app/services/sam_service.py (REWRITTEN)
 """
-MobileSAM (ai_experiments) integration service.
+Request-level orchestration for MobileSAM-assisted mask refinement.
 
-Wraps the MobileSAM model so the frontend can request an automatic
-segmentation mask by clicking a single point on the uploaded image.
-
-The model is loaded lazily and kept as a process-wide singleton so the
-heavy encoder only runs once per image (mirrors the pattern in
-ai_experiments/mobilesam_test/test_mobilesam.py, but without the
-interactive matplotlib prompt).
-
-The returned mask follows the SAME contract as the hand-drawn annotation
-mask used everywhere else in the studio:
-  - White (#FFFFFF) = editable region (the segmented object)
-  - Black (#000000) = protected / untouched region
-This lets the existing generation_service.apply the effect inside the
-SAM-produced mask with zero contract changes.
+Contract: given an already-stored image and the user's rough selection
+(a box, required; an optional disambiguation point), returns a black/white
+PNG mask (white = editable region) that is GUARANTEED to be a subset of
+the user's rough selection — SAM can only tighten the boundary inward, it
+can never paint outside what the user selected. This is enforced by
+intersecting SAM's raw output with a rasterized version of the box.
 """
 import logging
-import threading
 from io import BytesIO
 from pathlib import Path
 
 import numpy as np
-import torch
-from PIL import Image
+from PIL import Image, ImageDraw
+
+from app.ml.sam.predictor import predict_mask
 
 logger = logging.getLogger(__name__)
 
-# --- Model configuration (mirrors ai_experiments/mobilesam_test) ---
-_MODEL_TYPE = "vit_t"
-_CHECKPOINT = "Backend/ai_experiments/mobilesam_test/MobileSAM/weights/mobile_sam.pt"
 
-# Process-wide singleton state, guarded by a lock for lazy init.
-_lock = threading.Lock()
-_predictor = None
-_loaded_image_id = None
-
-
-def _get_device() -> str:
-    return "cuda" if torch.cuda.is_available() else "cpu"
+def _rasterize_box(box: list[int], width: int, height: int) -> np.ndarray:
+    """Boolean mask, True inside the box, used as the hard clip ceiling."""
+    img = Image.new("L", (width, height), 0)
+    draw = ImageDraw.Draw(img)
+    x0, y0, x1, y1 = box
+    draw.rectangle([x0, y0, x1, y1], fill=255)
+    return np.array(img) > 128
 
 
-def _load_model():
-    """Lazily build and cache the MobileSAM predictor (singleton)."""
-    global _predictor
-    if _predictor is not None:
-        return _predictor
-
-    from mobile_sam import sam_model_registry, SamPredictor
-
-    device = _get_device()
-    logger.info("Loading MobileSAM model on device=%s", device)
-    checkpoint_path = Path(_CHECKPOINT)
-    if not checkpoint_path.exists():
-        raise FileNotFoundError(
-            f"MobileSAM checkpoint not found at {checkpoint_path}. "
-            "Run the download step in ai_experiments/mobilesam_test first."
-        )
-    model = sam_model_registry[_MODEL_TYPE](checkpoint=str(checkpoint_path))
-    model.to(device=device)
-    model.eval()
-    _predictor = SamPredictor(model)
-    logger.info("MobileSAM model loaded")
-    return _predictor
-
-
-def _ensure_image_encoded(predictor, image_id: str, source_path: Path):
-    """Run the (expensive) image encoder once per image."""
-    global _loaded_image_id
-    if _loaded_image_id == image_id:
-        return
-    image = np.array(Image.open(source_path).convert("RGB"))
-    predictor.set_image(image)
-    _loaded_image_id = image_id
-
-
-def segment_from_point(
+def segment_within_box(
     source_path: Path,
     image_id: str,
-    point_x: int,
-    point_y: int,
+    box: list[int],
+    point: tuple[int, int] | None = None,
 ) -> bytes:
     """
-    Run MobileSAM for a single clicked point and return a black/white PNG
-    mask (white = segmented region) as raw bytes.
-
-    point_x / point_y are in IMAGE pixel coordinates (origin top-left),
-    matching the coordinates the frontend records via Konva's
-    getRelativePointerPosition().
+    Runs MobileSAM constrained to `box`, clips the result to the box as a
+    safety net against edge bleed, and returns a black/white PNG (white =
+    editable region) as raw bytes — same contract as the manual brush/
+    polygon mask, so generation_service.py needs no changes.
     """
-    with _lock:
-        predictor = _load_model()
-        _ensure_image_encoded(predictor, image_id, source_path)
+    with Image.open(source_path) as src:
+        width, height = src.size
 
-        input_point = np.array([[float(point_x), float(point_y)]])
-        input_label = np.array([1])  # 1 = point is inside the target region
+    raw_mask = predict_mask(source_path, image_id, box=box, point=point)  # bool (H, W)
 
-        masks, scores, _ = predictor.predict(
-            point_coords=input_point,
-            point_labels=input_label,
-            multimask_output=True,  # returns 3 candidates, ranked by score
-        )
+    selection_ceiling = _rasterize_box(box, width, height)
+    clipped_mask = raw_mask & selection_ceiling  # AND: never exceed the user's box
 
-    best_mask = masks[int(np.argmax(scores))]
-
-    # Convert boolean mask -> black/white PNG (white = editable region).
-    mask_uint8 = (best_mask.astype(np.uint8)) * 255
+    mask_uint8 = clipped_mask.astype(np.uint8) * 255
     mask_img = Image.fromarray(mask_uint8, mode="L")
 
     buf = BytesIO()

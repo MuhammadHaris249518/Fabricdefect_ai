@@ -15,6 +15,7 @@ endpoint; no frontend or contract changes are needed.
 """
 import base64
 import binascii
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -25,6 +26,8 @@ from app.core.storage import get_mask_storage
 from app.db import repository
 from app.schemas.generation import GenerationRequest, GenerationResponse
 from app.services.generation_service import generate_defect
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/generations", tags=["generations"])
 
@@ -80,12 +83,15 @@ async def create_generation(
     try:
         result_path = generate_defect(source_path, mask_path, generation.id, req.prompt)
     except Exception as exc:  # noqa: BLE001 - surface any model failure as a clean 500
+        import traceback
+        error_detail = traceback.format_exc()
+        logger.error("Generation failed: %s\n%s", exc, error_detail)
         repository.update_generation_record(
             db, generation, status="failed", error_message=str(exc)
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Generation failed. Your image, mask, and prompt are unchanged — please retry.",
+            detail=f"Generation failed: {exc}",
         ) from exc
 
     generation = repository.update_generation_record(
