@@ -5,6 +5,7 @@ import {
   Square,
   Hexagon,
   Hand,
+  Sparkles,
   Undo2,
   Redo2,
   ZoomIn,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 const TOOLS = [
+  { id: "sam", label: "AI Select", icon: Sparkles },
   { id: "brush", label: "Brush", icon: Paintbrush2 },
   { id: "eraser", label: "Eraser", icon: Eraser },
   { id: "rectangle", label: "Rectangle", icon: Square },
@@ -128,6 +130,13 @@ export default function Toolbar({
       {tool === "pan" && (
         <p className="text-[11px] text-text-secondary">
           Drag to pan. Scroll to zoom from any tool.
+        </p>
+      )}
+
+      {tool === "sam" && (
+        <p className="text-[11px] text-text-secondary">
+          Click once on the object you want to select — the AI (MobileSAM) will
+          generate the mask automatically.
         </p>
       )}
     </div>

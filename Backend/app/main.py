@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1 import annotations, generations, images
+from app.api.v1 import annotations, generations, images, sam
 from app.core.config import get_settings
 from app.db import models  # noqa: F401
 from app.db.base import Base
@@ -33,6 +33,7 @@ app.add_middleware(
 app.include_router(images.router, prefix="/api/v1")
 app.include_router(annotations.router, prefix="/api/v1")
 app.include_router(generations.router, prefix="/api/v1")
+app.include_router(sam.router, prefix="/api/v1")
 
 app.mount("/storage", StaticFiles(directory="storage"), name="storage")
 

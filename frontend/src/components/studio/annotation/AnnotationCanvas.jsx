@@ -26,7 +26,7 @@ const CLOSE_VERTEX_THRESHOLD_PX = 12;
  * can control zoom without duplicating pan/scale state.
  */
 const AnnotationCanvas = forwardRef(function AnnotationCanvas(
-  { imageUrl, tool, brushSize, shapes, onCommitShape, containerSize, onImageLoad },
+  { imageUrl, tool, brushSize, shapes, onCommitShape, containerSize, onImageLoad, onSamClick },
   ref
 ) {
   const [imgEl, setImgEl] = useState(null);
@@ -153,6 +153,16 @@ const AnnotationCanvas = forwardRef(function AnnotationCanvas(
     if (tool === "pan") return;
     const point = getImagePoint();
     if (!point) return;
+
+    if (tool === "sam") {
+      // Hand the clicked image-pixel point up to the parent, which calls
+      // the MobileSAM backend and replaces the mask with the AI result.
+      onSamClick?.({
+        x: Math.round(point.x),
+        y: Math.round(point.y),
+      });
+      return;
+    }
 
     if (tool === "brush" || tool === "eraser") {
       isDrawing.current = true;

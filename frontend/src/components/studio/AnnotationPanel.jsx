@@ -1,10 +1,11 @@
 // Repo path: frontend/src/components/studio/AnnotationPanel.jsx  (REWRITTEN)
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Lock } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 import AnnotationCanvas from "./annotation/AnnotationCanvas";
 import Toolbar from "./annotation/Toolbar";
 import { useAnnotationHistory } from "../../hooks/useAnnotationHistory";
 import { rasterizeMask, hasPaintedRegion } from "../../lib/annotation/maskEngine";
+import { segmentWithSam } from "../../services/api";
 
 const PANEL_HEIGHT = 360;
 
@@ -21,12 +22,40 @@ function AnnotationWorkspace({ image, onMaskChange }) {
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
   const [tool, setTool] = useState("brush");
   const [brushSize, setBrushSize] = useState(28);
+  const [samLoading, setSamLoading] = useState(false);
+  const [samError, setSamError] = useState(null);
 
   const { shapes, commit, undo, redo, canUndo, canRedo, reset } = useAnnotationHistory([]);
+
+  // When the AI Select tool is used, call MobileSAM with the clicked point
+  // and feed the returned mask into the same contract the rest of the
+  // studio uses (dataUrl + previewUrl). This means Generate works unchanged.
+  const handleSamClick = useCallback(
+    async ({ x, y }) => {
+      if (!image?.id) return;
+      setSamLoading(true);
+      setSamError(null);
+      try {
+        const { mask_data } = await segmentWithSam({
+          imageId: image.id,
+          pointX: x,
+          pointY: y,
+        });
+        onMaskChange?.({ dataUrl: mask_data, previewUrl: mask_data });
+      } catch (err) {
+        setSamError(err.message || "AI segmentation failed.");
+      } finally {
+        setSamLoading(false);
+      }
+    },
+    [image, onMaskChange]
+  );
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return undefined;
+ 
+ 
     const observer = new ResizeObserver((entries) => {
       setContainerWidth(entries[0].contentRect.width);
     });
@@ -76,9 +105,17 @@ function AnnotationWorkspace({ image, onMaskChange }) {
           brushSize={brushSize}
           shapes={shapes}
           onCommitShape={handleCommitShape}
+          onSamClick={handleSamClick}
           containerSize={{ width: containerWidth, height: PANEL_HEIGHT }}
           onImageLoad={setNaturalSize}
         />
+        {samLoading && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-card bg-white/60">
+            <span className="flex items-center gap-2 text-sm font-medium text-accent">
+              <Loader2 className="h-4 w-4 animate-spin" /> AI is generating the mask…
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="mt-3">
@@ -97,6 +134,9 @@ function AnnotationWorkspace({ image, onMaskChange }) {
           onClearAll={reset}
           hasShapes={shapes.length > 0}
         />
+        {samError && (
+          <p className="mt-2 text-xs font-medium text-alert">{samError}</p>
+        )}
       </div>
     </>
   );
