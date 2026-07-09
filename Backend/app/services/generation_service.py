@@ -21,8 +21,10 @@ from PIL import Image, ImageFilter
 
 logger = logging.getLogger(__name__)
 
-# Points at Synthetic_AI/3_models relative to this file's location
-_SYNTHETIC_AI_ROOT = Path(__file__).resolve().parents[4] / "Synthetic_AI"
+# Points at Synthetic_AI/3_models relative to this file's location.
+# __file__ = .../Crumble_VisionAI/Backend/app/services/generation_service.py
+# parents[0]=services/, parents[1]=app/, parents[2]=Backend/, parents[3]=Crumble_VisionAI/
+_SYNTHETIC_AI_ROOT = Path(__file__).resolve().parents[3] / "Synthetic_AI"
 _MODEL_PATH = _SYNTHETIC_AI_ROOT / "3_models" / "stable-diffusion-xl-1.0-inpainting-0.1"
 _LORA_DIR = _SYNTHETIC_AI_ROOT / "3_models"
 _LORA_FILENAME = "cookie_defect_lora.safetensors"
@@ -265,7 +267,18 @@ def generate_defect(
             result = _generate_with_real_model(source, mask_img, prompt)
             logger.info("Generated using real SDXL model")
         except Exception as exc:
-            logger.warning("Real model failed (%s) — falling back to stub effect", exc)
+            import traceback
+            logger.error(
+                "Real model failed — falling back to stub effect.\n"
+                "Exception type : %s\n"
+                "Exception msg  : %s\n"
+                "Model path     : %s\n"
+                "Traceback:\n%s",
+                type(exc).__name__,
+                exc,
+                _MODEL_PATH,
+                traceback.format_exc(),
+            )
             prompt_lower = prompt.strip().lower()
             effect_fn = _PROMPT_EFFECTS.get(prompt_lower, _apply_generic_effect)
             result = effect_fn(source, mask_arr)
