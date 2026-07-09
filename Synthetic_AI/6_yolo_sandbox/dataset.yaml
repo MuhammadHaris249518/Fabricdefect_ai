@@ -1,0 +1,8 @@
+# This file is regenerated automatically (with an absolute `path`) every
+# time you run 4_scripts/train_yolo.py - this copy just shows the format.
+path: ../
+train: 5_output_dataset/images
+val: 2_training_real/images
+names:
+  0: hole
+  1: oil_stain
